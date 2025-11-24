@@ -1,34 +1,40 @@
-name: Terraform Deploy
+name: Terraform Apply
 
 on:
   push:
-    branches: [ main ]
-  #workflow_dispatch:   # ✅ Manual trigger only
-
+    branches:
+      - main   # Run pipeline only when code is pushed to main branch
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
 
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: us-east-1 # change if needed
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      # Step 1: Checkout repo
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
+      # Step 2: Install Terraform
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.5   # you can change version
 
+      # Step 3: Configure AWS credentials (from GitHub Secrets)
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1     # Change if using different region
+
+      # Step 4: Terraform Init
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Validate
-        run: terraform validate
+      # Step 5: Terraform Plan
+        run: terraform plan
 
-      - name: Terraform Plan
-        run: terraform plan -out=tfplan
-
+      # Step 6: Terraform Apply
       - name: Terraform Apply
+        run: terraform apply -auto-approve
